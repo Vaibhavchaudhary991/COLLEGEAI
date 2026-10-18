@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Document — AI College Assistant{% endblock %}
+{% block nav_upload %}active{% endblock %}
+{% block nav_admin_docs %}active{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'documents:admin_list' %}" style="color:var(--color-muted); text-decoration:none;">Documents</a>
+  / <span class="bc-current">Upload</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>Upload Document</h1>
+  <p class="subtitle">Add new course materials to the platform</p>
+</div>
+
+<div class="row justify-content-center fade-in-up">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-cloud-upload-fill me-2" style="color:var(--color-accent-light);"></i>
+        Document Details
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label" for="doc-title">
+              Title <span style="color:var(--color-danger);">*</span>
+            </label>
+            <input type="text" class="form-control" id="doc-title" name="title"
+                   placeholder="e.g. Introduction to Machine Learning" required maxlength="255" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="doc-description">Description</label>
+            <textarea class="form-control" id="doc-description" name="description"
+                      rows="3" placeholder="Brief description of the document content..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="doc-category">Category</label>
+            <select class="form-select" id="doc-category" name="category">
+              <option value="">— No Category —</option>
+              {% for cat in categories %}
+              <option value="{{ cat.pk }}">{{ cat.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="doc-file">
+              File <span style="color:var(--color-danger);">*</span>
+            </label>
+            <div class="upload-drop-zone" id="drop-zone">
+              <input type="file" class="form-control" id="doc-file" name="file"
+                     accept=".pdf,.docx,.txt" required />
+              <div class="upload-hint mt-2">
+                <i class="bi bi-cloud-upload" style="font-size:24px; color:var(--color-accent-light); display:block; margin-bottom:6px;"></i>
+                <div style="color:var(--color-muted); font-size:13px;">
+                  Accepted: <strong>PDF</strong>, <strong>DOCX</strong>, <strong>TXT</strong>
+                  · Max size: <strong>10 MB</strong>
+                </div>
+              </div>
+              <div id="file-preview" style="display:none; margin-top:12px; font-size:13px; color:var(--color-text);"></div>
+            </div>
+          </div>
+
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary fw-semibold" id="submit-upload-btn">
+              <i class="bi bi-cloud-upload me-2"></i>Upload Document
+            </button>
+            <a href="{% url 'documents:admin_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const fileInput = document.getElementById('doc-file');
+  const filePreview = document.getElementById('file-preview');
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      filePreview.innerHTML = `
+        <i class="bi bi-file-earmark-check me-2" style="color:var(--color-success);"></i>
+        <strong>${file.name}</strong> — ${sizeMB} MB
+      `;
+      filePreview.style.display = 'block';
+    }
+  });
+
+  // Show loading state on submit
+  document.getElementById('upload-form').addEventListener('submit', function () {
+    const btn = document.getElementById('submit-upload-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-ring me-2"></span>Uploading...';
+  });
+</script>
+{% endblock %}

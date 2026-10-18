@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Chat — AI College Assistant{% endblock %}
+{% block nav_chat %}active{% endblock %}
+{% block breadcrumb %}<span class="bc-current">AI Chat</span>{% endblock %}
+
+{% block content %}
+<div class="chat-layout fade-in-up">
+
+  <!-- Sessions Panel -->
+  <div class="chat-sessions-panel">
+    <div class="chat-sessions-header">
+      <span style="font-size:13.5px; font-weight:600; color:var(--color-text);">
+        <i class="bi bi-chat-dots me-2" style="color:var(--color-accent-light);"></i>Conversations
+      </span>
+      <button class="btn btn-sm btn-primary" id="new-chat-btn" title="New chat">
+        <i class="bi bi-plus-lg"></i>
+      </button>
+    </div>
+
+    <div class="chat-sessions-list">
+      {% if sessions %}
+        {% for session in sessions %}
+        <div class="session-item {% if active_session.pk == session.pk %}active{% endif %}"
+             onclick="window.location='{% url 'chat:session' session.pk %}'"
+             id="session-{{ session.pk }}">
+          <div class="session-title">{{ session.title|truncatechars:35 }}</div>
+          <div class="session-meta">{{ session.message_count }} msg · {{ session.updated_at|date:"N j" }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center; padding:32px 16px; color:var(--color-muted);">
+          <i class="bi bi-chat-square" style="font-size:28px; display:block; margin-bottom:8px; opacity:0.3;"></i>
+          <div style="font-size:13px;">No conversations yet</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Chat Main Area -->
+  <div class="chat-main">
+
+    {% if active_session %}
+    <!-- Messages -->
+    <div class="chat-messages" id="chat-messages">
+      {% if chat_messages %}
+        {% for msg in chat_messages %}
+        <div>
+          <div class="message-bubble message-{{ msg.sender }}" data-sender="{{ msg.sender }}">
+            {% if msg.sender == 'assistant' %}
+              <div class="markdown-body">{{ msg.message }}</div>
+            {% else %}
+              {{ msg.message }}
+            {% endif %}
+          </div>
+          <div class="message-meta {% if msg.sender == 'user' %}text-end{% endif %}">
+            {{ msg.created_at|date:"g:i A" }}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="chat-empty-state" style="height:100%;">
+          <div class="p-3 text-center">
+            <div style="width:56px; height:56px; border-radius:50%; background:rgba(124,111,247,0.15); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+              <i class="bi bi-robot" style="font-size:28px; color:var(--color-accent-light);"></i>
+            </div>
+            <h5 style="font-weight:600; color:var(--color-text); margin-bottom:6px;">College AI Assistant</h5>
+            <p style="color:var(--color-muted); font-size:13.5px; max-width:440px; margin:0 auto 18px;">
+              Ask anything about academic regulations, exams, internships, placements, hostel rules, or scholarships.
+            </p>
+
+            <div class="suggestion-chips-container mx-auto">
+              <div class="suggestion-chip" onclick="askSuggestion('What is the minimum attendance required for examinations?')">
+                <i class="bi bi-calendar-check text-info"></i> Minimum attendance for exams?
+              </div>
+              <div class="suggestion-chip" onclick="askSuggestion('What are the eligibility criteria for campus placements?')">
+                <i class="bi bi-briefcase text-success"></i> Placement eligibility criteria?
+              </div>
+              <div class="suggestion-chip" onclick="askSuggestion('What are the hostel gate timings and curfew rules?')">
+                <i class="bi bi-house-door text-warning"></i> Hostel gate timings & curfew?
+              </div>
+              <div class="suggestion-chip" onclick="askSuggestion('How many books can I borrow from the library and for how long?')">
+                <i class="bi bi-book text-primary"></i> Library borrowing limits?
+              </div>
+              <div class="suggestion-chip" onclick="askSuggestion('What scholarships and fee waiver schemes are available?')">
+                <i class="bi bi-award text-danger"></i> Scholarship schemes?
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <textarea
+        class="chat-input"
+        id="chat-input-field"
+        placeholder="Ask anything about college policies, syllabus, placements, hostel… (Enter to send)"
+        rows="1"
+      ></textarea>
+      <button class="btn btn-primary px-4" id="send-message-btn" title="Send message">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+
+    {% else %}
+    <!-- No session selected -->
+    <div class="chat-empty-state" style="height:100%;">
+      <div style="width:68px; height:68px; border-radius:50%; background:rgba(124,111,247,0.15); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+        <i class="bi bi-robot" style="font-size:36px; color:var(--color-accent-light);"></i>
+      </div>
+      <div style="font-size:18px; font-weight:700; color:var(--color-text);">College AI Assistant</div>
+      <div style="color:var(--color-muted); font-size:14px; text-align:center; max-width:440px;">
+        Empowering students with instant, accurate answers about college regulations, placements, hostel guidelines, and campus facilities.
+        <br><br>
+        <span style="font-size:12.5px; color:var(--color-accent-light);">
+          <i class="bi bi-stars me-1"></i>Powered by RAG & Vector Embeddings
+        </span>
+      </div>
+
+      <div class="suggestion-chips-container mt-3">
+        <div class="suggestion-chip" onclick="startChatWithQuestion('What is the minimum attendance required for examinations?')">
+          <i class="bi bi-calendar-check text-info"></i> Attendance rules
+        </div>
+        <div class="suggestion-chip" onclick="startChatWithQuestion('What are the eligibility criteria for campus placements?')">
+          <i class="bi bi-briefcase text-success"></i> Placement criteria
+        </div>
+        <div class="suggestion-chip" onclick="startChatWithQuestion('What are the hostel gate timings and curfew rules?')">
+          <i class="bi bi-house-door text-warning"></i> Hostel rules
+        </div>
+        <div class="suggestion-chip" onclick="startChatWithQuestion('What scholarships and fee waiver schemes are available?')">
+          <i class="bi bi-award text-danger"></i> Scholarships
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-3" id="start-chat-btn">
+        <i class="bi bi-plus-lg me-2"></i>Start New Chat
+      </button>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Marked.js for markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+  const SESSION_ID = {{ active_session.pk|default:"null" }};
+  const csrfToken = '{{ csrf_token }}';
+
+  // Configure marked
+  if (typeof marked !== 'undefined') {
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+    });
+  }
+
+  function renderMarkdownSafe(text) {
+    if (!text) return '';
+    if (typeof marked !== 'undefined') {
+      try {
+        return marked.parse(text);
+      } catch (e) {
+        return escapeHtml(text);
+      }
+    }
+    return escapeHtml(text);
+  }
+
+  // Format existing assistant messages on page load
+  document.querySelectorAll('.message-bubble.message-assistant .markdown-body').forEach(el => {
+    el.innerHTML = renderMarkdownSafe(el.textContent);
+  });
+
+  // Scroll to bottom of messages
+  function scrollToBottom() {
+    const container = document.getElementById('chat-messages');
+    if (container) container.scrollTop = container.scrollHeight;
+  }
+  scrollToBottom();
+
+  // New chat session
+  async function createNewSession(initialQuestion = null) {
+    const title = initialQuestion ? initialQuestion.substring(0, 30) : 'New Chat';
+    const res = await fetch('/api/chat/sessions/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken,
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ title: title }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (initialQuestion) {
+        sessionStorage.setItem('pending_chat_prompt', initialQuestion);
+      }
+      window.location = `/chat/${data.id}/`;
+    }
+  }
+
+  document.getElementById('new-chat-btn')?.addEventListener('click', () => createNewSession());
+  document.getElementById('start-chat-btn')?.addEventListener('click', () => createNewSession());
+
+  function askSuggestion(question) {
+    const inputEl = document.getElementById('chat-input-field');
+    if (inputEl) {
+      inputEl.value = question;
+      sendMessage();
+    }
+  }
+
+  function startChatWithQuestion(question) {
+    createNewSession(question);
+  }
+
+  // Check if pending prompt from previous redirection
+  window.addEventListener('DOMContentLoaded', () => {
+    const pending = sessionStorage.getItem('pending_chat_prompt');
+    if (pending && SESSION_ID) {
+      sessionStorage.removeItem('pending_chat_prompt');
+      const inputEl = document.getElementById('chat-input-field');
+      if (inputEl) {
+        inputEl.value = pending;
+        sendMessage();
+      }
+    }
+  });
+
+  // Send message
+  async function sendMessage() {
+    if (!SESSION_ID) return;
+    const inputEl = document.getElementById('chat-input-field');
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = '';
+    inputEl.disabled = true;
+    document.getElementById('send-message-btn').disabled = true;
+
+    // Optimistically add user message
+    const container = document.getElementById('chat-messages');
+    const emptyState = container.querySelector('.chat-empty-state');
+    if (emptyState) emptyState.remove();
+
+    const userDiv = document.createElement('div');
+    userDiv.innerHTML = `
+      <div class="message-bubble message-user">${escapeHtml(text)}</div>
+      <div class="message-meta text-end">Now</div>
+    `;
+    container.appendChild(userDiv);
+    scrollToBottom();
+
+    // Show typing indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = `
+      <div class="message-bubble message-assistant" style="opacity:0.85; display:inline-flex; align-items:center; gap:8px;">
+        <span class="spinner-ring" style="width:14px; height:14px;"></span> Searching college knowledge base…
+      </div>
+    `;
+    container.appendChild(typingDiv);
+    scrollToBottom();
+
+    try {
+      const res = await fetch(`/api/chat/sessions/${SESSION_ID}/messages/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ message: text }),
+      });
+
+      document.getElementById('typing-indicator')?.remove();
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawContent = data.assistant_message.message;
+        const formattedContent = renderMarkdownSafe(rawContent);
+
+        const aiDiv = document.createElement('div');
+        aiDiv.innerHTML = `
+          <div class="message-bubble message-assistant">
+            <div class="markdown-body">${formattedContent}</div>
+          </div>
+          <div class="message-meta">Just now</div>
+        `;
+        container.appendChild(aiDiv);
+        scrollToBottom();
+      } else {
+        const errDiv = document.createElement('div');
+        errDiv.innerHTML = `
+          <div class="message-bubble message-assistant" style="border-color:rgba(239,68,68,0.4); color:#ef4444;">
+            <i class="bi bi-exclamation-circle me-1"></i> Failed to get a response. Please try again.
+          </div>
+        `;
+        container.appendChild(errDiv);
+        scrollToBottom();
+      }
+    } catch (e) {
+      document.getElementById('typing-indicator')?.remove();
+      const errDiv = document.createElement('div');
+      errDiv.innerHTML = `
+        <div class="message-bubble message-assistant" style="border-color:rgba(239,68,68,0.4); color:#ef4444;">
+          <i class="bi bi-wifi-off me-1"></i> Network error. Please check your connection.
+        </div>
+      `;
+      container.appendChild(errDiv);
+      scrollToBottom();
+    }
+
+    inputEl.disabled = false;
+    document.getElementById('send-message-btn').disabled = false;
+    inputEl.focus();
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(text));
+    return d.innerHTML;
+  }
+
+  document.getElementById('send-message-btn')?.addEventListener('click', sendMessage);
+
+  document.getElementById('chat-input-field')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Auto-resize textarea
+  const textarea = document.getElementById('chat-input-field');
+  if (textarea) {
+    textarea.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,1 @@
+# chat migrations package

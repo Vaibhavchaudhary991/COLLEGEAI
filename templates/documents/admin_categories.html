@@ -1,0 +1,113 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Document Categories — AI College Assistant{% endblock %}
+{% block nav_admin %}active{% endblock %}
+{% block breadcrumb %}Admin / Documents / <span class="bc-current">Categories</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>Document Categories</h1>
+  <p class="subtitle">Manage categories for organizing documents</p>
+</div>
+
+<div class="row g-4 fade-in-up">
+
+  <!-- Add Category Form -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-plus-circle-fill me-2" style="color:var(--color-accent-light);"></i>
+        Add New Category
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'documents:admin_category_add' %}" id="add-category-form">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="cat-name">Name <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-control" id="cat-name" name="name"
+                   placeholder="e.g. Syllabus" required maxlength="100" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="cat-desc">Description</label>
+            <textarea class="form-control" id="cat-desc" name="description" rows="3"
+                      placeholder="Brief description of this category"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100" id="btn-add-category">
+            <i class="bi bi-plus me-2"></i>Add Category
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category List -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-tags-fill me-2" style="color:var(--color-accent-light);"></i>All Categories</span>
+        <span style="font-size:12px;color:var(--color-muted);">{{ categories.count }} total</span>
+      </div>
+      {% if categories %}
+      <div class="table-responsive">
+        <table class="table mb-0" id="categories-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th style="text-align:center;">Documents</th>
+              <th style="text-align:center;">Status</th>
+              <th style="width:130px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cat in categories %}
+            <tr>
+              <td style="font-weight:500;color:var(--color-text);">{{ cat.name }}</td>
+              <td style="color:var(--color-muted);font-size:13px;">{{ cat.description|default:"—"|truncatechars:60 }}</td>
+              <td style="text-align:center;">
+                <span style="font-weight:600;color:var(--color-text);">{{ cat.document_count }}</span>
+              </td>
+              <td style="text-align:center;">
+                {% if cat.is_active %}
+                  <span class="badge-active">Active</span>
+                {% else %}
+                  <span class="badge-inactive">Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-2">
+                  <a href="{% url 'documents:admin_category_edit' cat.pk %}"
+                     class="btn btn-sm btn-outline-primary" title="Edit" id="btn-edit-cat-{{ cat.pk }}">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <form method="post" action="{% url 'documents:admin_category_toggle' cat.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-sm {{ cat.is_active|yesno:'btn-outline-warning,btn-outline-success' }}"
+                            title="{{ cat.is_active|yesno:'Deactivate,Activate' }}"
+                            id="btn-toggle-cat-{{ cat.pk }}"
+                            {% if cat.document_count > 0 and cat.is_active %}
+                            onclick="return confirm('This category has {{ cat.document_count }} document(s). Deactivating it will hide the category label. Continue?')"
+                            {% endif %}>
+                      <i class="bi bi-{{ cat.is_active|yesno:'pause,play' }}-fill"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-tags"></i>
+        <h5>No categories yet</h5>
+        <p style="color:var(--color-muted);">Add your first category using the form on the left.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

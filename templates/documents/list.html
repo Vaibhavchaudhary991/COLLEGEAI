@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Documents — AI College Assistant{% endblock %}
+{% block nav_documents %}active{% endblock %}
+{% block breadcrumb %}<span class="bc-current">Documents</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up d-flex align-items-start justify-content-between flex-wrap gap-3">
+  <div>
+    <h1>Documents</h1>
+    <p class="subtitle">Browse your available course materials</p>
+  </div>
+  {% if user.is_admin_role %}
+  <a href="{% url 'documents:upload' %}" class="btn btn-primary" id="upload-doc-btn">
+    <i class="bi bi-cloud-upload me-2"></i>Upload Document
+  </a>
+  {% endif %}
+</div>
+
+{% if documents %}
+<div class="row g-3 fade-in-up">
+  {% for doc in documents %}
+  <div class="col-sm-6 col-lg-4 col-xl-3">
+    <a href="{% url 'documents:detail' doc.pk %}" class="doc-card d-block text-decoration-none">
+      <div class="doc-card-icon">
+        {% if doc.file_type == 'pdf' %}📄{% elif doc.file_type == 'docx' %}📝{% else %}📃{% endif %}
+      </div>
+      <div class="doc-card-title">{{ doc.title|truncatechars:50 }}</div>
+      {% if doc.description %}
+      <div class="doc-card-meta" style="font-size:12px;">{{ doc.description|truncatechars:60 }}</div>
+      {% endif %}
+      <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+        <span class="file-type-badge file-{{ doc.file_type }}">{{ doc.file_type|upper }}</span>
+        <span style="color:var(--color-muted); font-size:11px;">{{ doc.file_size_display }}</span>
+        {% if not doc.is_active %}
+        <span class="badge-inactive">Inactive</span>
+        {% endif %}
+      </div>
+      <div style="font-size:11px; color:var(--color-muted); margin-top:8px;">
+        <i class="bi bi-clock me-1"></i>{{ doc.uploaded_at|date:"N j, Y" }}
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state fade-in-up">
+  <i class="bi bi-file-earmark"></i>
+  <h5>No documents available</h5>
+  <p>
+    {% if user.is_admin_role %}
+      Upload your first document to get started.
+    {% else %}
+      Course materials will appear here once an admin uploads them.
+    {% endif %}
+  </p>
+  {% if user.is_admin_role %}
+  <a href="{% url 'documents:upload' %}" class="btn btn-primary" id="empty-upload-btn">
+    <i class="bi bi-cloud-upload me-2"></i>Upload Document
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

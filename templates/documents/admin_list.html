@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Documents — AI College Assistant{% endblock %}
+{% block nav_admin_docs %}active{% endblock %}
+{% block breadcrumb %}Admin / <span class="bc-current">Documents</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>Manage Documents</h1>
+  <p class="subtitle">Upload, edit, activate or deactivate course materials</p>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-4 fade-in-up">
+  <div class="card-body">
+    <form method="get" id="doc-filter-form" class="d-flex flex-wrap gap-3 align-items-end">
+      <div style="flex:1;min-width:200px;">
+        <label class="form-label" for="doc-search">Search</label>
+        <input type="text" class="form-control" id="doc-search" name="q"
+               value="{{ search_q }}" placeholder="Title or description…" />
+      </div>
+      <div>
+        <label class="form-label" for="doc-cat-filter">Category</label>
+        <select class="form-select" id="doc-cat-filter" name="category">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.pk }}" {% if cat_filter == cat.pk|stringformat:"s" %}selected{% endif %}>
+            {{ cat.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary" id="btn-doc-filter">
+          <i class="bi bi-search me-2"></i>Filter
+        </button>
+        <a href="{% url 'documents:admin_list' %}" class="btn btn-outline-secondary ms-2">Clear</a>
+      </div>
+      <div class="ms-auto d-flex gap-2">
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reindex_all" />
+          <button type="submit" class="btn btn-outline-primary" id="btn-reindex-all" title="Re-index all active documents into ChromaDB">
+            <i class="bi bi-arrow-clockwise me-1"></i>Re-index All for AI
+          </button>
+        </form>
+        <a href="{% url 'documents:upload' %}" class="btn btn-primary" id="btn-upload-new">
+          <i class="bi bi-cloud-upload-fill me-2"></i>Upload New
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Document Table -->
+<div class="card fade-in-up">
+  {% if documents %}
+  <div class="table-responsive">
+    <table class="table mb-0" id="admin-docs-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Uploaded By</th>
+          <th>Date</th>
+          <th>Size</th>
+          <th style="text-align:center;">Status</th>
+          <th style="text-align:center;">AI Index</th>
+          <th style="width:180px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td style="font-weight:500;color:var(--color-text);">
+            <a href="{% url 'documents:detail' doc.pk %}" style="color:var(--color-text);text-decoration:none;">
+              {{ doc.title|truncatechars:40 }}
+            </a>
+          </td>
+          <td style="color:var(--color-muted);font-size:13px;">
+            {{ doc.category.name|default:"—" }}
+          </td>
+          <td><span class="file-type-badge file-{{ doc.file_type }}">{{ doc.file_type|upper }}</span></td>
+          <td style="color:var(--color-muted);font-size:13px;">{{ doc.uploaded_by.username|default:"N/A" }}</td>
+          <td style="color:var(--color-muted);font-size:13px;">{{ doc.uploaded_at|date:"j M Y" }}</td>
+          <td style="color:var(--color-muted);font-size:13px;">{{ doc.file_size_display }}</td>
+          <td style="text-align:center;">
+            {% if doc.is_active %}
+              <span class="badge-active">Active</span>
+            {% else %}
+              <span class="badge-inactive">Inactive</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if doc.is_indexed %}
+              <span class="badge" style="background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);font-size:11.5px;padding:4px 8px;border-radius:12px;">
+                <i class="bi bi-check-circle-fill me-1"></i>Indexed
+              </span>
+            {% elif doc.index_error %}
+              <span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);font-size:11.5px;padding:4px 8px;border-radius:12px;" title="{{ doc.index_error }}">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>Failed
+              </span>
+            {% else %}
+              <span class="badge" style="background:rgba(156,163,175,0.15);color:var(--color-muted);font-size:11.5px;padding:4px 8px;border-radius:12px;">
+                <i class="bi bi-clock me-1"></i>Pending
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              <!-- Re-index -->
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="document_id" value="{{ doc.pk }}" />
+                <input type="hidden" name="action" value="reindex" />
+                <button type="submit" class="btn btn-sm btn-outline-info"
+                        title="Re-index into AI Vector Database" id="btn-reindex-doc-{{ doc.pk }}">
+                  <i class="bi bi-arrow-repeat"></i>
+                </button>
+              </form>
+              <!-- Edit -->
+              <a href="{% url 'documents:admin_edit' doc.pk %}" class="btn btn-sm btn-outline-primary"
+                 title="Edit" id="btn-edit-doc-{{ doc.pk }}">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <!-- Toggle active -->
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="document_id" value="{{ doc.pk }}" />
+                <input type="hidden" name="action" value="toggle" />
+                <button type="submit" class="btn btn-sm {{ doc.is_active|yesno:'btn-outline-warning,btn-outline-success' }}"
+                        title="{{ doc.is_active|yesno:'Deactivate,Activate' }}"
+                        id="btn-toggle-doc-{{ doc.pk }}">
+                  <i class="bi bi-{{ doc.is_active|yesno:'pause,play' }}-fill"></i>
+                </button>
+              </form>
+              <!-- Delete -->
+              <form method="post" style="display:inline;"
+                    onsubmit="return confirm('Delete &quot;{{ doc.title|escapejs }}&quot;? This cannot be undone.')">
+                {% csrf_token %}
+                <input type="hidden" name="document_id" value="{{ doc.pk }}" />
+                <input type="hidden" name="action" value="delete" />
+                <button type="submit" class="btn btn-sm btn-outline-danger"
+                        title="Delete" id="btn-delete-doc-{{ doc.pk }}">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-file-earmark"></i>
+    <h5>No documents found</h5>
+    {% if search_q or cat_filter %}
+    <p style="color:var(--color-muted);">Try adjusting your search or filter.</p>
+    <a href="{% url 'documents:admin_list' %}" class="btn btn-outline-primary btn-sm">Clear filters</a>
+    {% else %}
+    <a href="{% url 'documents:upload' %}" class="btn btn-primary btn-sm mt-2">Upload first document</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

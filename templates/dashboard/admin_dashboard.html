@@ -1,0 +1,180 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Admin Dashboard — AI College Assistant{% endblock %}
+{% block nav_admin %}active{% endblock %}
+{% block breadcrumb %}Admin / <span class="bc-current">Dashboard</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>Admin Dashboard</h1>
+  <p class="subtitle">System-wide overview and management</p>
+</div>
+
+<!-- Stats Row 1 -->
+<div class="row g-3 mb-3 fade-in-up">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-purple"><i class="bi bi-people-fill"></i></div>
+      <div class="stat-value">{{ total_users }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-green"><i class="bi bi-person-badge-fill"></i></div>
+      <div class="stat-value">{{ total_students }}</div>
+      <div class="stat-label">Students</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-blue"><i class="bi bi-shield-fill"></i></div>
+      <div class="stat-value">{{ total_admins }}</div>
+      <div class="stat-label">Admins</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-orange"><i class="bi bi-tags-fill"></i></div>
+      <div class="stat-value">{{ total_categories }}</div>
+      <div class="stat-label">Categories</div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Row 2 -->
+<div class="row g-3 mb-4 fade-in-up">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-blue"><i class="bi bi-file-earmark-fill"></i></div>
+      <div class="stat-value">{{ total_documents }}</div>
+      <div class="stat-label">Total Documents</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-green"><i class="bi bi-file-earmark-check-fill"></i></div>
+      <div class="stat-value">{{ active_documents }}</div>
+      <div class="stat-label">Active Documents</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-orange"><i class="bi bi-chat-square-dots-fill"></i></div>
+      <div class="stat-value">{{ total_sessions }}</div>
+      <div class="stat-label">Chat Sessions</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-purple"><i class="bi bi-chat-left-text-fill"></i></div>
+      <div class="stat-value">{{ total_messages }}</div>
+      <div class="stat-label">Chat Messages</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4 fade-in-up">
+  <div class="card-header"><i class="bi bi-lightning-fill me-2" style="color:var(--color-accent-light);"></i>Quick Actions</div>
+  <div class="card-body d-flex gap-3 flex-wrap">
+    <a href="{% url 'documents:upload' %}" class="btn btn-primary" id="admin-upload-btn">
+      <i class="bi bi-cloud-upload me-2"></i>Upload Document
+    </a>
+    <a href="{% url 'documents:admin_list' %}" class="btn btn-outline-primary" id="admin-manage-docs-btn">
+      <i class="bi bi-folder2 me-2"></i>Manage Documents
+    </a>
+    <a href="{% url 'documents:admin_categories' %}" class="btn btn-outline-primary" id="admin-categories-btn">
+      <i class="bi bi-tags me-2"></i>Manage Categories
+    </a>
+    <a href="{% url 'accounts:admin_users' %}" class="btn btn-outline-secondary" id="admin-users-btn">
+      <i class="bi bi-people me-2"></i>Manage Users
+    </a>
+    <a href="{% url 'accounts:admin_profile' %}" class="btn btn-outline-secondary" id="admin-profile-btn">
+      <i class="bi bi-person-fill me-2"></i>My Profile
+    </a>
+  </div>
+</div>
+
+<div class="row g-4 fade-in-up">
+
+  <!-- Recent Documents -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-file-earmark-fill me-2" style="color:var(--color-accent-light);"></i>Recent Documents</span>
+        <a href="{% url 'documents:admin_list' %}" class="btn btn-sm btn-outline-primary">View all</a>
+      </div>
+      {% if recent_documents %}
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Uploaded By</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for doc in recent_documents %}
+            <tr>
+              <td>
+                <a href="{% url 'documents:detail' doc.pk %}" style="color:var(--color-text);text-decoration:none;font-weight:500;">
+                  {{ doc.title|truncatechars:30 }}
+                </a>
+              </td>
+              <td style="color:var(--color-muted);font-size:13px;">{{ doc.category.name|default:"—" }}</td>
+              <td style="color:var(--color-muted);">{{ doc.uploaded_by.username|default:"N/A" }}</td>
+              <td>
+                {% if doc.is_active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}
+              </td>
+              <td style="color:var(--color-muted);">{{ doc.uploaded_at|date:"j M" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-file-earmark"></i>
+        <h5>No documents yet</h5>
+        <a href="{% url 'documents:upload' %}" class="btn btn-primary btn-sm">Upload first document</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Users -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-people-fill me-2" style="color:var(--color-accent-light);"></i>Recent Users</span>
+        <a href="{% url 'accounts:admin_users' %}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      {% if recent_users %}
+      <ul class="list-group list-group-flush">
+        {% for u in recent_users %}
+        <li class="list-group-item d-flex align-items-center gap-3"
+            style="background:transparent;border-color:var(--color-border);padding:14px 20px;">
+          <div class="user-avatar-sm flex-shrink-0">{{ u.username|first|upper }}</div>
+          <div style="min-width:0;">
+            <div style="font-size:13.5px;font-weight:500;color:var(--color-text);">{{ u.get_full_name|default:u.username }}</div>
+            <div style="font-size:11px;color:var(--color-muted);">@{{ u.username }} · {{ u.date_joined|date:"j M" }}</div>
+          </div>
+          <div class="ms-auto flex-shrink-0 d-flex flex-column align-items-end gap-1">
+            <span class="role-badge role-{{ u.role }}">{{ u.get_role_display }}</span>
+            {% if not u.is_active %}<span class="badge-inactive" style="font-size:10px;">Inactive</span>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="empty-state"><i class="bi bi-people"></i><h5>No users yet</h5></div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

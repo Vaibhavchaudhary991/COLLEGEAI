@@ -1,0 +1,130 @@
+﻿{% extends "base.html" %}
+
+{% block title %}User Management — AI College Assistant{% endblock %}
+{% block nav_admin %}active{% endblock %}
+{% block breadcrumb %}Admin / <span class="bc-current">Users</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>User Management</h1>
+  <p class="subtitle">Manage all student and admin accounts</p>
+</div>
+
+<!-- Search & Filter -->
+<div class="card mb-4 fade-in-up">
+  <div class="card-body">
+    <form method="get" id="user-filter-form" class="d-flex flex-wrap gap-3 align-items-end">
+      <div style="flex:1;min-width:220px;">
+        <label class="form-label" for="search-users">Search</label>
+        <input type="text" class="form-control" id="search-users" name="q"
+               value="{{ search_q }}" placeholder="Name, username, or email…" />
+      </div>
+      <div>
+        <label class="form-label" for="role-filter">Role</label>
+        <select class="form-select" id="role-filter" name="role">
+          <option value="">All Roles</option>
+          <option value="student" {% if role_filter == "student" %}selected{% endif %}>Students</option>
+          <option value="admin" {% if role_filter == "admin" %}selected{% endif %}>Admins</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary" id="btn-filter-apply">
+          <i class="bi bi-search me-2"></i>Search
+        </button>
+        <a href="{% url 'accounts:admin_users' %}" class="btn btn-outline-secondary ms-2" id="btn-filter-clear">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results count -->
+<div class="mb-3 fade-in-up" style="color:var(--color-muted);font-size:13px;">
+  Showing <strong style="color:var(--color-text);">{{ total_count }}</strong> user{{ total_count|pluralize }}
+  {% if search_q %} matching "<em>{{ search_q }}</em>"{% endif %}
+  {% if role_filter %} · Role: <strong style="color:var(--color-text);">{{ role_filter|capfirst }}</strong>{% endif %}
+</div>
+
+<!-- User Table -->
+<div class="card fade-in-up">
+  {% if users %}
+  <div class="table-responsive">
+    <table class="table mb-0" id="users-table">
+      <thead>
+        <tr>
+          <th style="width:50px;"></th>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Joined</th>
+          <th>Last Login</th>
+          <th>Status</th>
+          <th style="width:140px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            <div class="user-avatar-sm">
+              {% if u.avatar %}
+                <img src="{{ u.avatar.url }}" alt="{{ u.username }}" />
+              {% else %}
+                {{ u.username|first|upper }}
+              {% endif %}
+            </div>
+          </td>
+          <td style="font-weight:500;color:var(--color-text);">
+            {{ u.get_full_name|default:"—" }}
+          </td>
+          <td style="color:var(--color-muted);">@{{ u.username }}</td>
+          <td style="color:var(--color-muted);font-size:13px;">{{ u.email }}</td>
+          <td><span class="role-badge role-{{ u.role }}">{{ u.get_role_display }}</span></td>
+          <td style="color:var(--color-muted);font-size:13px;">{{ u.date_joined|date:"j M Y" }}</td>
+          <td style="color:var(--color-muted);font-size:13px;">
+            {% if u.last_login %}{{ u.last_login|date:"j M Y" }}{% else %}Never{% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge-active">Active</span>
+            {% else %}
+              <span class="badge-inactive">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{% url 'accounts:admin_user_detail' u.pk %}" class="btn btn-sm btn-outline-primary"
+                 title="View Details" id="btn-view-user-{{ u.pk }}">
+                <i class="bi bi-eye"></i>
+              </a>
+              {% if u.pk != request.user.pk %}
+              <form method="post" action="{% url 'accounts:admin_user_toggle' u.pk %}"
+                    onsubmit="return confirm('{{ u.is_active|yesno:'Deactivate,Activate' }} user {{ u.username }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm {{ u.is_active|yesno:'btn-outline-warning,btn-outline-success' }}"
+                        title="{{ u.is_active|yesno:'Deactivate,Activate' }}"
+                        id="btn-toggle-user-{{ u.pk }}">
+                  <i class="bi bi-{{ u.is_active|yesno:'pause,play' }}-fill"></i>
+                </button>
+              </form>
+              {% else %}
+              <span class="btn btn-sm btn-outline-secondary disabled" title="Cannot modify your own account">
+                <i class="bi bi-shield-fill"></i>
+              </span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-people"></i>
+    <h5>No users found</h5>
+    <p style="color:var(--color-muted);">Try adjusting your search or filter.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

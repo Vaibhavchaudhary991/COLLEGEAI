@@ -1,0 +1,106 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Edit Document — {{ document.title }} — AI College Assistant{% endblock %}
+{% block nav_admin_docs %}active{% endblock %}
+{% block breadcrumb %}Admin / <a href="{% url 'documents:admin_list' %}" style="color:var(--color-muted);text-decoration:none;">Documents</a> / <span class="bc-current">Edit</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>Edit Document</h1>
+  <p class="subtitle">Update details for "{{ document.title }}"</p>
+</div>
+
+<div class="row g-4 fade-in-up">
+
+  <!-- File Info (readonly) -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-file-earmark-fill me-2" style="color:var(--color-accent-light);"></i>
+        File Information
+      </div>
+      <div class="card-body" style="font-size:13.5px;">
+        <div class="mb-3">
+          <div style="color:var(--color-muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Filename</div>
+          <div style="color:var(--color-text);">{{ document.filename }}</div>
+        </div>
+        <div class="mb-3">
+          <div style="color:var(--color-muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Type</div>
+          <span class="file-type-badge file-{{ document.file_type }}">{{ document.file_type|upper }}</span>
+        </div>
+        <div class="mb-3">
+          <div style="color:var(--color-muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Size</div>
+          <div style="color:var(--color-text);">{{ document.file_size_display }}</div>
+        </div>
+        <div class="mb-3">
+          <div style="color:var(--color-muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Uploaded By</div>
+          <div style="color:var(--color-text);">{{ document.uploaded_by.username|default:"—" }}</div>
+        </div>
+        <div>
+          <div style="color:var(--color-muted);font-size:11px;text-transform:uppercase;font-weight:600;margin-bottom:4px;">Upload Date</div>
+          <div style="color:var(--color-text);">{{ document.uploaded_at|date:"j F Y, g:i A" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-pencil-fill me-2" style="color:var(--color-accent-light);"></i>
+        Edit Details
+      </div>
+      <div class="card-body">
+        <form method="post" id="edit-document-form">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label" for="doc-title">Title <span style="color:#ef4444;">*</span></label>
+            <input type="text" class="form-control" id="doc-title" name="title"
+                   value="{{ document.title }}" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="doc-description">Description</label>
+            <textarea class="form-control" id="doc-description" name="description" rows="3">{{ document.description }}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="doc-category">Category</label>
+            <select class="form-select" id="doc-category" name="category">
+              <option value="">— No Category —</option>
+              {% for cat in categories %}
+              <option value="{{ cat.pk }}" {% if document.category.pk == cat.pk %}selected{% endif %}>
+                {{ cat.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="doc-active" name="is_active"
+                     {% if document.is_active %}checked{% endif %} />
+              <label class="form-check-label" for="doc-active">Active (visible to students)</label>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 flex-wrap">
+            <button type="submit" class="btn btn-primary fw-semibold" id="btn-save-document">
+              <i class="bi bi-check2 me-2"></i>Save Changes
+            </button>
+            <a href="{% url 'documents:admin_list' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-x me-2"></i>Cancel
+            </a>
+            <a href="{% url 'documents:detail' document.pk %}" class="btn btn-outline-primary ms-auto">
+              <i class="bi bi-eye me-2"></i>View Document
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

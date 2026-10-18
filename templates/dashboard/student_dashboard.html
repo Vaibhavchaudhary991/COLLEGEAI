@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard — AI College Assistant{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block breadcrumb %}<span class="bc-current">Dashboard</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>Welcome back, {{ user.first_name|default:user.username }} 👋</h1>
+  <p class="subtitle">Here's what's happening in your learning journey</p>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4 fade-in-up">
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-blue"><i class="bi bi-file-earmark-text-fill"></i></div>
+      <div class="stat-value">{{ document_count }}</div>
+      <div class="stat-label">Available Documents</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon stat-icon-purple"><i class="bi bi-chat-dots-fill"></i></div>
+      <div class="stat-value">{{ chat_session_count }}</div>
+      <div class="stat-label">Chat Sessions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Content -->
+<div class="row g-4 fade-in-up">
+
+  <!-- Recent Chat Sessions -->
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-chat-dots-fill me-2" style="color:var(--color-accent-light);"></i>Recent Chats</span>
+        <a href="{% url 'chat:index' %}" class="btn btn-sm btn-outline-primary">View all</a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_sessions %}
+        <ul class="list-group list-group-flush">
+          {% for session in recent_sessions %}
+          <li class="list-group-item d-flex align-items-center justify-content-between"
+              style="background:transparent; border-color:var(--color-border); padding:14px 20px;">
+            <div>
+              <div style="font-size:13.5px; font-weight:500; color:var(--color-text);">{{ session.title }}</div>
+              <div style="font-size:11px; color:var(--color-muted);">{{ session.message_count }} message{{ session.message_count|pluralize }} · {{ session.updated_at|date:"N j" }}</div>
+            </div>
+            <a href="{% url 'chat:session' session.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:11px;">
+              Open <i class="bi bi-arrow-right"></i>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-chat-dots"></i>
+          <h5>No chats yet</h5>
+          <p>Start a conversation with the AI assistant</p>
+          <a href="{% url 'chat:index' %}" class="btn btn-primary btn-sm">Start chatting</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Documents -->
+  <div class="col-lg-7">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-file-earmark-text-fill me-2" style="color:var(--color-accent-light);"></i>Recent Documents</span>
+        <a href="{% url 'documents:list' %}" class="btn btn-sm btn-outline-primary">View all</a>
+      </div>
+      <div class="card-body">
+        {% if recent_documents %}
+        <div class="row g-3">
+          {% for doc in recent_documents %}
+          <div class="col-sm-6">
+            <a href="{% url 'documents:detail' doc.pk %}" class="doc-card text-decoration-none">
+              <div class="doc-card-icon">
+                {% if doc.file_type == 'pdf' %}📄{% elif doc.file_type == 'docx' %}📝{% else %}📃{% endif %}
+              </div>
+              <div>
+                <div class="doc-card-title">{{ doc.title|truncatechars:40 }}</div>
+                <div class="doc-card-meta">
+                  <span class="file-type-badge file-{{ doc.file_type }}">{{ doc.file_type|upper }}</span>
+                  · {{ doc.file_size_display }}
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-file-earmark"></i>
+          <h5>No documents yet</h5>
+          <p>Course materials will appear here once an admin uploads them</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-4 fade-in-up">
+  <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+    <span style="color:var(--color-muted); font-size:13px; font-weight:600;">Quick actions:</span>
+    <a href="{% url 'chat:index' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-chat-plus me-1"></i>New Chat
+    </a>
+    <a href="{% url 'documents:list' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-folder2-open me-1"></i>Browse Documents
+    </a>
+    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-person me-1"></i>Edit Profile
+    </a>
+  </div>
+</div>
+{% endblock %}

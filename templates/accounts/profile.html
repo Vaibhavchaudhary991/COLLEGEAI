@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile — AI College Assistant{% endblock %}
+{% block nav_profile %}active{% endblock %}
+{% block breadcrumb %}<span class="bc-current">Profile</span>{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+  <h1>My Profile</h1>
+  <p class="subtitle">Manage your account information</p>
+</div>
+
+<div class="row g-4 fade-in-up">
+  <!-- Profile Card -->
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body text-center py-4">
+        <div class="profile-avatar mx-auto mb-3">
+          {% if user.avatar %}
+            <img src="{{ user.avatar.url }}" alt="{{ user.username }}" />
+          {% else %}
+            {{ user.username|first|upper }}
+          {% endif %}
+        </div>
+        <h5 style="color:var(--color-text); font-weight:700;">{{ user.get_full_name|default:user.username }}</h5>
+        <div class="role-badge role-{{ user.role }} d-inline-block mb-2">{{ user.get_role_display }}</div>
+        <p style="color:var(--color-muted); font-size:13px;">@{{ user.username }}</p>
+        <hr style="border-color:var(--color-border);" />
+        <div class="text-start" style="font-size:13px; color:var(--color-muted);">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-envelope" style="color:var(--color-accent-light);"></i>
+            {{ user.email }}
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-calendar3" style="color:var(--color-accent-light);"></i>
+            Joined {{ user.date_joined|date:"N j, Y" }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-pencil-fill me-2" style="color:var(--color-accent-light);"></i>
+        Edit Profile
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="profile-form">
+          {% csrf_token %}
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label" for="prof-first-name">First Name</label>
+              <input type="text" class="form-control" id="prof-first-name" name="first_name"
+                     value="{{ user.first_name }}" placeholder="First name" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="prof-last-name">Last Name</label>
+              <input type="text" class="form-control" id="prof-last-name" name="last_name"
+                     value="{{ user.last_name }}" placeholder="Last name" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="prof-bio">Bio</label>
+            <textarea class="form-control" id="prof-bio" name="bio" rows="3"
+                      placeholder="Tell us a bit about yourself...">{{ user.bio }}</textarea>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label" for="prof-avatar">Profile Photo</label>
+            <input type="file" class="form-control" id="prof-avatar" name="avatar"
+                   accept="image/*" />
+            <div style="font-size:12px; color:var(--color-muted); margin-top:4px;">
+              Optional. JPG, PNG, GIF supported.
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary fw-semibold" id="save-profile-btn">
+            <i class="bi bi-check2 me-2"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Account Info (read-only) -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <i class="bi bi-shield-fill me-2" style="color:var(--color-accent-light);"></i>
+        Account Details
+      </div>
+      <div class="card-body">
+        <div class="row g-3" style="font-size:13.5px;">
+          <div class="col-sm-6">
+            <div style="color:var(--color-muted); font-size:11px; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Username</div>
+            <div style="color:var(--color-text);">{{ user.username }}</div>
+          </div>
+          <div class="col-sm-6">
+            <div style="color:var(--color-muted); font-size:11px; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Email</div>
+            <div style="color:var(--color-text);">{{ user.email }}</div>
+          </div>
+          <div class="col-sm-6">
+            <div style="color:var(--color-muted); font-size:11px; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Role</div>
+            <span class="role-badge role-{{ user.role }}">{{ user.get_role_display }}</span>
+          </div>
+          <div class="col-sm-6">
+            <div style="color:var(--color-muted); font-size:11px; text-transform:uppercase; font-weight:600; margin-bottom:4px;">Member Since</div>
+            <div style="color:var(--color-text);">{{ user.date_joined|date:"N j, Y" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
