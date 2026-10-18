@@ -35,6 +35,11 @@ class ChatSessionListCreateAPIView(APIView):
             return Response(ChatSessionSerializer(session).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request):
+        """Clear all chat sessions for the authenticated user."""
+        count, _ = ChatSession.objects.filter(user=request.user).delete()
+        return Response({"message": f"Deleted {count} chat sessions."}, status=status.HTTP_200_OK)
+
 
 class ChatSessionDetailAPIView(APIView):
     """
